@@ -1,0 +1,16 @@
+README
+
+Per avviare il progetto fare la build dei file jar attraverso maven e dopo digitare i comandi:
+	docker-compose build
+	docker-compose up
+
+Per avviare kubernetes digitare i comandi:
+	minikube start --vm-driver=docker
+	eval $(minikube docker-env)
+	minikube addons enable ingress
+	docker build -t seecity-citta:v1 ./seecity-MS0
+	docker build -t seecity-feedback:v1 ./seecity-MS1
+	docker build -t seecity-event:v1 ./seecity-MS2
+	kubectl apply -f ./k8s
+
+Per le statistiche fare riferimento al file README nella cartella "monitoring"

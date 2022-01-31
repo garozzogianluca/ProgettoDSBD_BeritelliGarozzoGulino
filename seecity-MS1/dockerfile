@@ -1,0 +1,15 @@
+FROM maven:3-jdk-8 as builder
+WORKDIR /project
+COPY . .
+#RUN mvn package
+
+FROM openjdk:latest
+WORKDIR /app
+COPY .mvn .mvn
+COPY mvnw pom.xml ./
+RUN chmod 755 /app/mvnw
+RUN ./mvnw dependency:go-offline
+COPY --from=builder /project/target/seecity-MS1-0.0.1-SNAPSHOT.jar ./seecity-MS1.jar
+COPY ./target/seecity-MS1-0.0.1-SNAPSHOT.jar ./seecity-MS1.jar
+ENTRYPOINT ["/bin/sh", "-c"]
+CMD  [ "java -jar seecity-MS1.jar" ]

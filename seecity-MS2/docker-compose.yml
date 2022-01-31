@@ -1,0 +1,93 @@
+version: '3.3'
+services:
+  #service 1: definition of mysql database
+  mongodb_ms2:
+    image: mongo:latest
+    command: mongod --port 27018
+    ports:
+      - "27018:27018"
+    restart: always
+    volumes:
+      - event_db:/data/db
+  #service 2: definition of your spring-boot app
+  event:                                #it is just a name, which will be used only in this file.
+    image: image2:latest                  #name of the image after dockerfile executes
+    build:
+      context: .                          #docker file path (. means root directory)
+      dockerfile: dockerfile              #docker file name
+    ports:
+      - "8082:8082"                       #docker containter port with your os port
+    restart: always
+    depends_on:                           #define dependencies of this app
+      - mongodb_ms2                       #dependency name (which is defined with this name in this file earlier)
+    environment:
+      MONGODB_2_HOST: mongodb_ms2
+      KAFKA_ADDRESS: kafka
+      KAFKA_GROUP_ID: monitoring-consumer
+    logging:
+      driver: none
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - event_zookeeper_data:/var/lib/zookeeper/data
+      - event_zookeeper_log:/var/lib/zookeeper/log
+    logging:
+      driver: none
+    #restart: unless-stopped
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - "29092:9092"
+    environment:
+      #DOCKER_API_VERSION: 1.22
+      #KAFKA_ADVERTISED_HOST_NAME: kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CREATE_TOPICS: "monitoring:2:1"
+      KAFKA_BROKER_ID: 1
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    volumes:
+      - event_kafka_data:/var/lib/kafka/data
+      - event_kafka_log:/var/lib/kafka/log
+    #logging:
+    #  driver: none
+    restart: always
+  kafka-ui:
+    image: provectuslabs/kafka-ui
+    container_name: kafka-ui
+    ports:
+      - "8083:8080"
+    restart: always
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+    logging:
+      driver: none
+  statistiche:
+    image: statistiche:latest
+    container_name: statistiche
+    restart: always
+    build:
+      context: ./statistiche
+      dockerfile: dockerfile
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_ADDRESS=kafka
+volumes:
+  event_db:
+  event_zookeeper_data:
+  event_zookeeper_log:
+  event_kafka_data:
+  event_kafka_log:

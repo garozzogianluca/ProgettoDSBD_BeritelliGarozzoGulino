@@ -1,0 +1,21 @@
+version: '3.3'
+services:
+  #service 1: definition of mysql database
+  mongodb_ms1:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    restart: always
+  #service 2: definition of your spring-boot app
+  service:                                #it is just a name, which will be used only in this file.
+    image: image1:latest                  #name of the image after dockerfile executes
+    build:
+      context: .                          #docker file path (. means root directory)
+      dockerfile: dockerfile              #docker file name
+    ports:
+      - "8081:8081"                       #docker containter port with your os port
+    restart: always
+    depends_on:                           #define dependencies of this app
+      - mongodb_ms1                       #dependency name (which is defined with this name in this file earlier)
+    environment:
+      MONGODB_HOST: mongodb_ms1

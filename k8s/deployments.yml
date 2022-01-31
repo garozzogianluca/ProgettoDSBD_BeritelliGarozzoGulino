@@ -1,0 +1,170 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: citta
+spec:
+  replicas: 3
+  revisionHistoryLimit: 3
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: seecity-citta
+  template:
+    metadata:
+      labels:
+        app: seecity-citta
+    spec:
+      containers:
+        - name: seecity-citta
+          image: seecity-citta:v1
+          envFrom:
+            - secretRef:
+                name: mysql-secret
+            - configMapRef:
+                name: citta-env-file
+          ports:
+            - containerPort: 8080
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            httpGet:
+              port: 8080
+              path: /ping
+            initialDelaySeconds: 120
+            periodSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              port: 8080
+              path: /ping
+            initialDelaySeconds: 60
+            periodSeconds: 5
+            failureThreshold: 5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: feedback
+spec:
+  replicas: 3
+  revisionHistoryLimit: 3
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: seecity-feedback
+  template:
+    metadata:
+      labels:
+        app: seecity-feedback
+    spec:
+      containers:
+        - name: seecity-feedback
+          image: seecity-feedback:v1
+          ports:
+            - containerPort: 8081
+          imagePullPolicy: Never
+          livenessProbe:
+            httpGet:
+              port: 8081
+              path: /ping
+            initialDelaySeconds: 120
+            periodSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              port: 8081
+              path: /ping
+            initialDelaySeconds: 60
+            periodSeconds: 5
+            failureThreshold: 5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: event
+spec:
+  replicas: 3
+  revisionHistoryLimit: 3
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: seecity-event
+  template:
+    metadata:
+      labels:
+        app: seecity-event
+    spec:
+      containers:
+        - name: seecity-event
+          image: seecity-event:v1
+          envFrom:
+            - configMapRef:
+                name: event-env-file
+          ports:
+            - containerPort: 8082
+          imagePullPolicy: Never
+          livenessProbe:
+            httpGet:
+              port: 8082
+              path: /ping
+            initialDelaySeconds: 120
+            periodSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              port: 8082
+              path: /ping
+            initialDelaySeconds: 60
+            periodSeconds: 5
+            failureThreshold: 5
+#subsets:
+#  - addresses:
+#      - ip: 172.17.0.6
+#        port: 8082
+#        targetPort: 9376
+---
+#L'ingress serve per esporre il servizio su internet
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: seecity-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "PUT, GET, POST, OPTIONS, DELETE"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "Content-Type"
+    nginx.ingress.kubernetes.io/rewrite-target: "/"
+    #nginx.ingress.kubernetes.io/configuration-snippet: |
+    #  proxy_set_header X-Script-Name /seecity;
+spec:
+  rules:
+    - host: seecity.dev.loc
+      http:
+        paths:
+          - path: /
+              pathType: ImplementationSpecific
+              backend:
+                service:
+                  name: seecity-citta
+                  port:
+                    number: 8080
+          - path: /
+              pathType: ImplementationSpecific
+              backend:
+                service:
+                  name: seecity-feedback
+                  port:
+                    number: 8081
+          - path: /
+              pathType: ImplementationSpecific
+              backend:
+                service:
+                  name: seecity-event
+                  port:
+                    number: 8082

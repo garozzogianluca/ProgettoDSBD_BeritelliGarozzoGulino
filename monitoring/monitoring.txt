@@ -1,0 +1,8 @@
+EventStatistics GET ALL - IP Remoto: 172.26.0.1 IP Locale: 172.26.0.7 ResponseTime: 0 StatusCode: 200 OK CurrentTime: 2022-01-29 at 15:36:41 UTC
+EventStatistics GET NOT FOUND IP Remoto: 172.18.0.1 IP Locale: 172.18.0.7 ResponseTime: 7 StatusCode: 404 NOT_FOUND CurrentTime: 2022-01-28 at 14:23:20 UTC
+EventStatistics GET ID: 61f6b97cf2611857fae4a0a1 IP Remoto: 172.26.0.1 IP Locale: 172.26.0.7 ResponseTime: 0 StatusCode: 200 OK CurrentTime: 2022-01-28 at 15:27:49 UTC
+EventStatistics POST ID: 61f8010575dd3200d0e71ae1 IP Remoto: 172.26.0.1 IP Locale: 172.26.0.7 ResponseTime: 59 StatusCode: 200 OK CurrentTime: 2022-01-29 at 15:32:21 UTC
+EventStatistics DELETE ID: 61f8010875dd3200d0e71ae3 IP Remoto: 172.26.0.1 IP Locale: 172.26.0.7 ResponseTime: 10 StatusCode: 200 OK CurrentTime: 2022-01-30 at 15:33:06 UTC
+EventStatistics GET ALL - IP Remoto: 172.26.0.1 IP Locale: 172.26.0.7 ResponseTime: 0 StatusCode: 200 OK CurrentTime: 2022-01-31 at 15:33:35 UTC
+EventStatistics DELETE ID: 61f8010875dd3200d0e71ae2 IP Remoto: 172.26.0.1 IP Locale: 172.26.0.7 ResponseTime: 6 StatusCode: 200 OK CurrentTime: 2022-01-31 at 15:33:48 UTC
+EventStatistics GET ALL - IP Remoto: 172.26.0.1 IP Locale: 172.26.0.7 ResponseTime: 0 StatusCode: 200 OK CurrentTime: 2022-01-31 at 15:36:41 UTC

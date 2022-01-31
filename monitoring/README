@@ -1,0 +1,10 @@
+README
+
+Installare confluent_kafka:
+	pip3 install confluent-kafka
+	
+Per il salvataggio delle statistiche sul file "monitoring.txt" inserire il comando (l'applicazione deve essere già avviata seguendo il file README nella cartella dell'applicazione):
+	python3 read_statistics.py
+
+Per plottare i grafici:
+	python3 plot_stat.py

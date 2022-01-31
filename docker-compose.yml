@@ -1,0 +1,163 @@
+version: '3.3'
+
+volumes:
+  city_db:
+  event_db:
+  event_zookeeper_data:
+  event_zookeeper_log:
+  event_kafka_data:
+  event_kafka_log:
+
+services:
+
+  # CITY SERVICE
+
+  city_db:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_USER: root
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: MS0
+    ports:
+      - "3306:3306"
+    volumes:
+      - city_db:/var/lib/mysql
+    restart: always
+    logging:
+      driver: none
+  
+  city:                                  
+    image: seecity_city:latest                  
+    build: ./seecity-MS0            
+    ports:
+      - "8080:8080"                       
+    restart: always
+    depends_on:                           
+      - city_db             
+    environment:
+      MYSQL_HOST: city_db
+      MYSQL_USERNAME: root
+      MYSQL_PASSWORD: root
+      MYSQL_DATABASE: MS0
+      KAFKA_ADDRESS: kafka
+      KAFKA_GRUPPO_ID: citta-consumer
+      KAFKA_TOPIC_CITTA: cittaTopic
+  
+  # FEEDBACK SERVICE
+
+  feedback_db:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    restart: always
+    logging:
+      driver: none
+  
+  feedback:                            
+    image: seecity_feedback:latest  
+    build: ./seecity-MS1          
+    ports:
+      - "8081:8081"                       
+    restart: always
+    depends_on:                           
+      - feedback_db                       
+    environment:
+      MONGODB_HOST: feedback_db
+    logging:
+      driver: none
+
+  # EVENT SERVICE
+  
+  event_db:
+    image: mongo:latest
+    command: mongod --port 27018
+    ports:
+      - "27018:27018"
+    restart: always
+    volumes:
+      - event_db:/data/db
+    logging:
+      driver: none
+      
+  event:                                
+    image: seecity_event:latest                  
+    build: ./seecity-MS2             
+    ports:
+      - "8082:8082"                       
+    restart: always
+    depends_on:                           
+      - event_db
+    environment:
+      MONGODB_2_HOST: event_db
+      KAFKA_ADDRESS: kafka
+      KAFKA_GROUP_ID: monitoring-consumer
+      KAFKA_GRUPPO_ID: event-consumer
+      KAFKA_TOPIC_CITTA: cittaTopic
+    logging:
+      driver: none
+  
+  # KAFKA
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - event_zookeeper_data:/var/lib/zookeeper/data
+      - event_zookeeper_log:/var/lib/zookeeper/log
+    logging:
+      driver: none
+    #restart: unless-stopped
+    
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_CREATE_TOPICS: "monitoring:2:1"
+      KAFKA_BROKER_ID: 1
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    volumes:
+      - event_kafka_data:/var/lib/kafka/data
+      - event_kafka_log:/var/lib/kafka/log
+    logging:
+      driver: none
+    restart: always
+  
+  kafka-ui:
+    image: provectuslabs/kafka-ui
+    container_name: kafka-ui
+    ports:
+      - "8083:8080"
+    restart: always
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+    logging:
+      driver: none
+
+  # STATISTICS
+  
+  #statistiche:
+  #  image: statistiche:latest
+  #  container_name: statistiche
+  #  restart: always
+  #  build:
+  #    context: ./statistiche
+  #    dockerfile: dockerfile
+  #  depends_on:
+  #    - kafka
+  #  environment:
+  #    - KAFKA_ADDRESS=kafka
+
